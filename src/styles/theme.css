@@ -1,0 +1,29 @@
+:root {
+  --background: #f7f8fa;
+  --foreground: #0f172a;
+  --muted-foreground: #475569;
+  --radius-card: 1rem;
+  --radius-control: 0.75rem;
+  --shadow-card: 0 18px 45px rgb(15 23 42 / 0.08);
+  --shadow-soft: 0 10px 30px rgb(15 23 42 / 0.06);
+}
+
+.dark {
+  --background: #090d17;
+  --foreground: #e2e8f0;
+  --muted-foreground: #94a3b8;
+  --shadow-card: 0 18px 45px rgb(0 0 0 / 0.28);
+  --shadow-soft: 0 10px 30px rgb(0 0 0 / 0.22);
+}
+
+.bg-background {
+  background-color: var(--background);
+}
+
+.text-foreground {
+  color: var(--foreground);
+}
+
+.text-muted-foreground {
+  color: var(--muted-foreground);
+}
