@@ -4,22 +4,31 @@ export function getAuthToken() {
   if (typeof window === "undefined") {
     return null;
   }
-
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch {
+    return null;
+  }
 }
 
 export function setAuthToken(token: string) {
   if (typeof window === "undefined") {
     return;
   }
-
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  try {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+  } catch {
+    // Ignore storage failures in restricted environments.
+  }
 }
 
 export function clearAuthToken() {
   if (typeof window === "undefined") {
     return;
   }
-
-  localStorage.removeItem(AUTH_TOKEN_KEY);
+  try {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  } catch {
+    // Ignore storage failures in restricted environments.
+  }
 }

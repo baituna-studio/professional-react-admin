@@ -29,7 +29,7 @@ function subscribe(listener: () => void) {
 }
 
 function getSnapshot() {
-  return { ...uiState };
+  return uiState;
 }
 
 export function useUiStore() {

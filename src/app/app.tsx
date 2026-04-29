@@ -15,7 +15,7 @@ import { useAuthStore } from "@/features/auth/auth.store";
 import { useDashboardOverviewQuery } from "@/features/dashboard/dashboard.queries";
 import { SettingsPage } from "@/features/settings/settings-page";
 import { UsersPage } from "@/features/users/users-page";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore, useState } from "react";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard" },
@@ -32,6 +32,15 @@ function readPath() {
 function navigate(path: string) {
   window.history.pushState({}, "", path);
   window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+function subscribeToLocationChange(listener: () => void) {
+  window.addEventListener("popstate", listener);
+  return () => window.removeEventListener("popstate", listener);
+}
+
+function useWindowPath() {
+  return useSyncExternalStore(subscribeToLocationChange, readPath, () => "/dashboard");
 }
 
 function DashboardOverview() {
@@ -138,27 +147,12 @@ function DashboardOverview() {
 }
 
 export function App() {
-  const [path, setPath] = useState(() => (typeof window === "undefined" ? "/dashboard" : readPath()));
   const [openDialog, setOpenDialog] = useState(false);
   const { isAuthenticated, login, logout } = useAuthStore();
+  const path = useWindowPath();
+  const displayPath = isAuthenticated ? path : "/login";
 
-  useEffect(() => {
-    const onPopState = () => setPath(readPath());
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated && path !== "/login") {
-      navigate("/login");
-    }
-
-    if (isAuthenticated && path === "/login") {
-      navigate("/dashboard");
-    }
-  }, [isAuthenticated, path]);
-
-  if (!isAuthenticated || path === "/login") {
+  if (displayPath === "/login") {
     return (
       <LoginPage
         onSuccess={(token) => {

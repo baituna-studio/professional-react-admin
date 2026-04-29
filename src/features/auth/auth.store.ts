@@ -21,7 +21,7 @@ function subscribe(listener: () => void) {
 }
 
 function snapshot() {
-  return { ...state };
+  return state;
 }
 
 export function useAuthStore() {
@@ -31,11 +31,19 @@ export function useAuthStore() {
     token: current.token,
     isAuthenticated: Boolean(current.token),
     login: (token: string) => {
+      if (state.token === token) {
+        return;
+      }
+
       setAuthToken(token);
       state.token = token;
       emit();
     },
     logout: () => {
+      if (state.token === null) {
+        return;
+      }
+
       clearAuthToken();
       state.token = null;
       emit();
