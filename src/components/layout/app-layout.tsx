@@ -8,16 +8,17 @@ type AppLayoutProps = {
   navItems: NavConfig[];
   currentPath: string;
   children: ReactNode;
+  onLogout?: () => void;
 };
 
-export function AppLayout({ title, navItems, currentPath, children }: AppLayoutProps) {
+export function AppLayout({ title, navItems, currentPath, children, onLogout }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <MobileSidebar items={navItems} currentPath={currentPath} />
       <div className="flex min-h-screen">
         <Sidebar items={navItems} currentPath={currentPath} />
         <div className="flex min-h-screen flex-1 flex-col">
-          <Topbar title={title} />
+          <Topbar title={title} onLogout={onLogout} />
           <main className="flex-1 p-4 md:p-6">{children}</main>
         </div>
       </div>

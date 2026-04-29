@@ -6,9 +6,10 @@ import { useUiStore } from "@/store/ui-store";
 
 type TopbarProps = {
   title: string;
+  onLogout?: () => void;
 };
 
-export function Topbar({ title }: TopbarProps) {
+export function Topbar({ title, onLogout }: TopbarProps) {
   const { toggleSidebar, setMobileSidebarOpen, commandMenuOpen, setCommandMenuOpen } = useUiStore();
 
   return (
@@ -36,7 +37,7 @@ export function Topbar({ title }: TopbarProps) {
             Alerts
           </Button>
           <ThemeToggle />
-          <UserMenu />
+          <UserMenu onLogout={onLogout} />
         </div>
       </div>
     </header>
