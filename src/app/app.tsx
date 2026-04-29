@@ -1,3 +1,4 @@
+import { AppLayout } from "@/components/layout/app-layout";
 import { ChartCard } from "@/components/shared/chart-card";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -13,12 +14,28 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
 
+const navItems = [
+  { label: "Dashboard", href: "/dashboard" },
+  { label: "Analytics", href: "/analytics" },
+  { label: "Users", href: "/users" },
+  { label: "Settings", href: "/settings" }
+];
+
+function getCurrentPath() {
+  if (typeof window === "undefined") {
+    return "/dashboard";
+  }
+
+  const raw = window.location.pathname;
+  return raw === "/" ? "/dashboard" : raw;
+}
+
 export function App() {
   const [open, setOpen] = useState(false);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-6 md:p-10">
+    <AppLayout title="Admin Overview" navItems={navItems} currentPath={getCurrentPath()}>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <PageHeader>
           <PageHeaderTitle>UI Component System Baseline</PageHeaderTitle>
           <PageHeaderDescription>
@@ -76,6 +93,6 @@ export function App() {
         onCancel={() => setOpen(false)}
         onConfirm={() => setOpen(false)}
       />
-    </main>
+    </AppLayout>
   );
 }
