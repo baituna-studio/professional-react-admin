@@ -1,6 +1,5 @@
 import { AppLayout } from "@/components/layout/app-layout";
 import { ChartCard } from "@/components/shared/chart-card";
-import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingCard } from "@/components/shared/loading-card";
 import {
@@ -14,6 +13,7 @@ import { LoginPage } from "@/features/auth/login-page";
 import { ProtectedRoute } from "@/features/auth/protected-route";
 import { useAuthStore } from "@/features/auth/auth.store";
 import { useDashboardOverviewQuery } from "@/features/dashboard/dashboard.queries";
+import { SettingsPage } from "@/features/settings/settings-page";
 import { UsersPage } from "@/features/users/users-page";
 import { useEffect, useMemo, useState } from "react";
 
@@ -172,7 +172,7 @@ export function App() {
   return (
     <ProtectedRoute isAuthenticated={isAuthenticated}>
       <AppLayout
-        title={path === "/users" ? "Users" : "Dashboard"}
+        title={path === "/users" ? "Users" : path === "/settings" ? "Settings" : "Dashboard"}
         navItems={navItems}
         currentPath={path}
         onLogout={() => {
@@ -180,15 +180,13 @@ export function App() {
           navigate("/login");
         }}
       >
-        {path === "/users" ? <UsersPage onOpenDialog={() => setOpenDialog(true)} /> : <DashboardOverview />}
-
-        <ConfirmDialog
-          open={openDialog}
-          title="Invite new user"
-          description="This is a mock flow. Full create user form can be added in the next change."
-          onCancel={() => setOpenDialog(false)}
-          onConfirm={() => setOpenDialog(false)}
-        />
+        {path === "/users" ? (
+          <UsersPage onOpenDialog={() => setOpenDialog(true)} />
+        ) : path === "/settings" ? (
+          <SettingsPage />
+        ) : (
+          <DashboardOverview />
+        )}
       </AppLayout>
     </ProtectedRoute>
   );
