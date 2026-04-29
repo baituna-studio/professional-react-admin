@@ -9,16 +9,12 @@ import {
   PageHeaderTitle
 } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { LoginPage } from "@/features/auth/login-page";
 import { ProtectedRoute } from "@/features/auth/protected-route";
 import { useAuthStore } from "@/features/auth/auth.store";
 import { useDashboardOverviewQuery } from "@/features/dashboard/dashboard.queries";
-import { useUsersListQuery } from "@/features/users/users.queries";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard" },
@@ -42,7 +38,6 @@ export function App() {
   const [path, setPath] = useState(() => (typeof window === "undefined" ? "/dashboard" : readPath()));
   const { isAuthenticated, login, logout } = useAuthStore();
   const dashboardQuery = useDashboardOverviewQuery();
-  const usersQuery = useUsersListQuery({ status: "all", page: 1, search: "" });
 
   useEffect(() => {
     const onPopState = () => setPath(readPath());
@@ -60,6 +55,10 @@ export function App() {
     }
   }, [isAuthenticated, path]);
 
+  const trafficTotal = useMemo(() => {
+    return (dashboardQuery.data?.traffic ?? []).reduce((acc, item) => acc + item.visitors, 0);
+  }, [dashboardQuery.data?.traffic]);
+
   if (!isAuthenticated || path === "/login") {
     return (
       <LoginPage
@@ -74,7 +73,7 @@ export function App() {
   return (
     <ProtectedRoute isAuthenticated={isAuthenticated}>
       <AppLayout
-        title="Admin Overview"
+        title="Dashboard"
         navItems={navItems}
         currentPath={path}
         onLogout={() => {
@@ -82,87 +81,96 @@ export function App() {
           navigate("/login");
         }}
       >
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-          <PageHeader>
-            <PageHeaderTitle>UI Component System Baseline</PageHeaderTitle>
-            <PageHeaderDescription>
-              Reusable primitive and shared components for dashboard feature development.
-            </PageHeaderDescription>
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+          <PageHeader className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <PageHeaderTitle>Overview</PageHeaderTitle>
+              <PageHeaderDescription>
+                Track revenue performance, traffic quality, and team activity in one premium dashboard surface.
+              </PageHeaderDescription>
+            </div>
+            <Button variant="outline">Apr 01 - Apr 29, 2026</Button>
           </PageHeader>
 
           {dashboardQuery.isLoading ? (
-            <section className="grid gap-4 md:grid-cols-3">
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <LoadingCard />
               <LoadingCard />
               <LoadingCard />
               <LoadingCard />
             </section>
           ) : (
-            <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {dashboardQuery.data?.kpis.map((kpi) => (
                 <StatCard
                   key={kpi.label}
                   label={kpi.label}
                   value={kpi.value}
-                  trend={`${kpi.trend === "up" ? "+" : "-"}${kpi.change}%`}
+                  trend={`${kpi.trend === "up" ? "+" : "-"}${kpi.change}% vs last period`}
                 />
               ))}
             </section>
           )}
 
-          <section className="grid gap-4 lg:grid-cols-2">
-            <ChartCard title="Revenue Trend" description="Mock async data loaded with simulated latency.">
+          <section className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+            <ChartCard title="Revenue vs Expenses" description="Monthly movement from mock async source.">
               <div className="space-y-1 text-xs text-slate-500">
                 {(dashboardQuery.data?.revenue ?? []).map((point) => (
-                  <p key={point.month}>{`${point.month}: $${point.revenue.toLocaleString()}`}</p>
+                  <p key={point.month}>{`${point.month}: revenue $${point.revenue.toLocaleString()} / expenses $${point.expenses.toLocaleString()}`}</p>
                 ))}
               </div>
             </ChartCard>
 
-            {usersQuery.isLoading ? (
-              <LoadingCard />
-            ) : usersQuery.data.length === 0 ? (
-              <EmptyState
-                title="No users found"
-                description="This state appears when query returns empty data."
-                actionLabel="Reload"
-              />
-            ) : (
-              <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
-                <p className="text-sm font-semibold text-slate-700">Users sample ({usersQuery.total})</p>
-                <ul className="mt-3 space-y-2 text-sm text-slate-600">
-                  {usersQuery.data.slice(0, 4).map((user) => (
-                    <li key={user.id} className="flex items-center justify-between gap-2">
-                      <span>{user.name}</span>
-                      <StatusBadge status={user.status} />
+            <ChartCard title="Traffic Sources" description="Visitor distribution snapshot.">
+              <div className="space-y-2 text-sm text-slate-600">
+                {(dashboardQuery.data?.traffic ?? []).map((item) => {
+                  const pct = trafficTotal > 0 ? Math.round((item.visitors / trafficTotal) * 100) : 0;
+                  return (
+                    <div key={item.source} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span>{item.source}</span>
+                        <span>{pct}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-slate-200">
+                        <div className="h-2 rounded-full bg-slate-800" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ChartCard>
+          </section>
+
+          <section className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+            <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-base font-semibold text-slate-900">Recent Activity</h3>
+                <Button variant="ghost" size="sm">
+                  View all
+                </Button>
+              </div>
+
+              {(dashboardQuery.data?.activity?.length ?? 0) === 0 ? (
+                <EmptyState title="No activity yet" description="Recent workspace events will appear here." />
+              ) : (
+                <ul className="space-y-3">
+                  {(dashboardQuery.data?.activity ?? []).map((item) => (
+                    <li key={item.id} className="rounded-[var(--radius-control)] border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-sm font-medium text-slate-800">{`${item.actor} ${item.action} ${item.target}`}</p>
+                      <p className="text-xs text-slate-500">{item.createdAt}</p>
                     </li>
                   ))}
                 </ul>
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-slate-500">User Status Preview</p>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status="active" />
-                  <StatusBadge status="invited" />
-                  <StatusBadge status="suspended" />
-                </div>
-              </div>
-              <div className="flex w-full flex-col gap-2 md:w-72">
-                <label htmlFor="search" className="text-xs font-medium text-slate-500">
-                  Search users
-                </label>
-                <Input id="search" placeholder="Type name or email..." />
-              </div>
+              )}
             </div>
 
-            <Separator />
-
-            <div className="flex justify-end">
-              <Button onClick={() => setOpen(true)}>Open Confirm Dialog</Button>
+            <div className="rounded-[var(--radius-card)] border border-slate-200 bg-gradient-to-br from-slate-900 to-slate-700 p-5 text-white shadow-[var(--shadow-card)]">
+              <p className="text-xs uppercase tracking-wide text-slate-300">Premium Insight</p>
+              <h3 className="mt-2 text-xl font-semibold">Upgrade workspace analytics</h3>
+              <p className="mt-2 text-sm text-slate-200">
+                Unlock funnel attribution, cohort retention, and deeper conversion segmentation for leadership reporting.
+              </p>
+              <Button className="mt-4 bg-white text-slate-900 hover:bg-slate-100">Explore upgrade</Button>
             </div>
           </section>
         </div>
