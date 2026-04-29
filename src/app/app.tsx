@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { ChartCard } from "@/components/shared/chart-card";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
+import { LoadingCard } from "@/components/shared/loading-card";
 import {
   PageHeader,
   PageHeaderDescription,
@@ -15,6 +16,8 @@ import { Separator } from "@/components/ui/separator";
 import { LoginPage } from "@/features/auth/login-page";
 import { ProtectedRoute } from "@/features/auth/protected-route";
 import { useAuthStore } from "@/features/auth/auth.store";
+import { useDashboardOverviewQuery } from "@/features/dashboard/dashboard.queries";
+import { useUsersListQuery } from "@/features/users/users.queries";
 import { useEffect, useState } from "react";
 
 const navItems = [
@@ -38,6 +41,8 @@ export function App() {
   const [open, setOpen] = useState(false);
   const [path, setPath] = useState(() => (typeof window === "undefined" ? "/dashboard" : readPath()));
   const { isAuthenticated, login, logout } = useAuthStore();
+  const dashboardQuery = useDashboardOverviewQuery();
+  const usersQuery = useUsersListQuery({ status: "all", page: 1, search: "" });
 
   useEffect(() => {
     const onPopState = () => setPath(readPath());
@@ -85,21 +90,55 @@ export function App() {
             </PageHeaderDescription>
           </PageHeader>
 
-          <section className="grid gap-4 md:grid-cols-3">
-            <StatCard label="Total Revenue" value="$128,450" trend="+14.2% from last month" />
-            <StatCard label="Active Users" value="1,249" trend="+4.8% from last week" />
-            <StatCard label="Open Tickets" value="32" trend="-2 resolved today" />
-          </section>
+          {dashboardQuery.isLoading ? (
+            <section className="grid gap-4 md:grid-cols-3">
+              <LoadingCard />
+              <LoadingCard />
+              <LoadingCard />
+            </section>
+          ) : (
+            <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {dashboardQuery.data?.kpis.map((kpi) => (
+                <StatCard
+                  key={kpi.label}
+                  label={kpi.label}
+                  value={kpi.value}
+                  trend={`${kpi.trend === "up" ? "+" : "-"}${kpi.change}%`}
+                />
+              ))}
+            </section>
+          )}
 
           <section className="grid gap-4 lg:grid-cols-2">
-            <ChartCard title="Revenue Trend" description="Placeholder chart container for upcoming Recharts integration.">
-              <div className="flex h-full items-center justify-center text-sm text-slate-500">Chart area</div>
+            <ChartCard title="Revenue Trend" description="Mock async data loaded with simulated latency.">
+              <div className="space-y-1 text-xs text-slate-500">
+                {(dashboardQuery.data?.revenue ?? []).map((point) => (
+                  <p key={point.month}>{`${point.month}: $${point.revenue.toLocaleString()}`}</p>
+                ))}
+              </div>
             </ChartCard>
-            <EmptyState
-              title="No notifications yet"
-              description="When activity starts, this card can show summary notifications."
-              actionLabel="Create sample"
-            />
+
+            {usersQuery.isLoading ? (
+              <LoadingCard />
+            ) : usersQuery.data.length === 0 ? (
+              <EmptyState
+                title="No users found"
+                description="This state appears when query returns empty data."
+                actionLabel="Reload"
+              />
+            ) : (
+              <div className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
+                <p className="text-sm font-semibold text-slate-700">Users sample ({usersQuery.total})</p>
+                <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                  {usersQuery.data.slice(0, 4).map((user) => (
+                    <li key={user.id} className="flex items-center justify-between gap-2">
+                      <span>{user.name}</span>
+                      <StatusBadge status={user.status} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
 
           <section className="rounded-[var(--radius-card)] border border-slate-200 bg-white p-5 shadow-[var(--shadow-soft)]">
